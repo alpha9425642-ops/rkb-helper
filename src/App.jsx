@@ -67,6 +67,8 @@ export default function App() {
   const [secret, setSecret] = useState("");
   const [totpToken, setTotpToken] = useState("");
   const [totpLeft, setTotpLeft] = useState(30);
+  const [isTotpValid, setIsTotpValid] = useState(false);
+
 
   // copy flash
   const [flashKey, setFlashKey] = useState(null);
@@ -171,23 +173,29 @@ export default function App() {
 
   // 2FA loop
   const totpRef = useRef(null);
-  useEffect(() => {
-    try {
-      const t = makeTotp(secret);
-      totpRef.current = t;
-      if (!t) {
-        setTotpToken("");
-        setTotpLeft(30);
-        return;
-      }
-      const now = totpNow(t);
-      setTotpToken(now.token);
-      setTotpLeft(now.left);
-    } catch {
+useEffect(() => {
+  try {
+    const t = makeTotp(secret);
+    totpRef.current = t;
+
+    if (!t) {
+      setIsTotpValid(false);
       setTotpToken("");
       setTotpLeft(30);
+      return;
     }
-  }, [secret]);
+
+    const now = totpNow(t);
+    setIsTotpValid(true);
+    setTotpToken(now.token);
+    setTotpLeft(now.left);
+  } catch {
+    setIsTotpValid(false);
+    setTotpToken("");
+    setTotpLeft(30);
+  }
+}, [secret]);
+
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -360,18 +368,19 @@ export default function App() {
     onClick={copyTotp}
     style={{ height: "100%", display: "grid", placeItems: "center" }}
   >
-    {secret && !totpToken ? (
-      <div className="muted">Invalid secret (needs Base32 or otpauth://)</div>
-    ) : totpToken ? (
-      <div style={{ textAlign: "center" }}>
-        <div className="bigValue" style={{ fontSize: 28 }}>{totpToken}</div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          Refresh in <span className="kbd">{totpLeft}s</span>
-        </div>
-      </div>
-    ) : (
-      <div className="muted">Paste or type a secret to see OTP</div>
-    )}
+{secret && !isTotpValid ? (
+  <div className="muted">Invalid secret (needs Base32 or otpauth://)</div>
+) : totpToken ? (
+  <div style={{ textAlign: "center" }}>
+    <div className="bigValue" style={{ fontSize: 28 }}>{totpToken}</div>
+    <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+      Refresh in <span className="kbd">{totpLeft}s</span>
+    </div>
+  </div>
+) : (
+  <div className="muted">Paste or type a secret to see OTP</div>
+)}
+
   </div>
 </ToastEdgeFlash>
 
