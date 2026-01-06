@@ -4,7 +4,8 @@ import ToastEdgeFlash from "./components/ToastEdgeFlash.jsx";
 import { MALE_FIRST, FEMALE_FIRST, LAST_NAMES } from "./data/names.js";
 import { copyWithFlash } from "./lib/copyFlash.js";
 import { extractOtp } from "./lib/otpExtract.js";
-import { makeTotp, totpNow } from "./lib/totp.js";
+import { parseTotpConfig, totpGenerate } from "./lib/totp";
+
 
 const GenderMode = {
   MIX: "mix",
@@ -171,43 +172,41 @@ export default function App() {
     await copyWithFlash(otpFromMail, "mailOtp", setFlashKey);
   }
 
-  // 2FA loop
-  const totpRef = useRef(null);
+// 2FA loop
+const totpRef = useRef(null);
+
+// when secret changes: parse config + set validity
 useEffect(() => {
-  try {
-const t = makeTotp(secret);
+  const cfg = parseTotpConfig(secret);
+  totpRef.current = cfg;
 
+  setIsTotpValid(!!cfg);
+  setTotpToken("");
+  setTotpLeft(30);
+}, [secret]);
 
-    totpRef.current = t;
+// ticker: generate OTP every 500ms (async)
+useEffect(() => {
+  const id = setInterval(async () => {
+    const cfg = totpRef.current;
+    if (!cfg) return;
 
-    if (!t) {
+    const now = await totpGenerate(cfg);
+    if (!now) {
       setIsTotpValid(false);
       setTotpToken("");
       setTotpLeft(30);
       return;
     }
 
-    const now = totpNow(t);
     setIsTotpValid(true);
     setTotpToken(now.token);
     setTotpLeft(now.left);
-  } catch {
-    setIsTotpValid(false);
-    setTotpToken("");
-    setTotpLeft(30);
-  }
-}, [secret]);
+  }, 500);
 
+  return () => clearInterval(id);
+}, []);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (!totpRef.current) return;
-      const now = totpNow(totpRef.current);
-      setTotpToken(now.token);
-      setTotpLeft(now.left);
-    }, 250);
-    return () => clearInterval(id);
-  }, []);
 
   async function pasteSecret() {
     try {
