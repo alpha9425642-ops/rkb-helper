@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export function ToastEdgeFlash({ flashKey, myKey, children }) {
+export default function ToastEdgeFlash({ flashKey, myKey, children }) {
   const [on, setOn] = useState(false);
   const lastTsRef = useRef(0);
   const timerRef = useRef(null);
@@ -9,7 +9,6 @@ export function ToastEdgeFlash({ flashKey, myKey, children }) {
     const ts = flashKey?.ts || 0;
     const key = flashKey?.key;
 
-    // Only flash once per unique ts, and only for matching key
     if (key !== myKey) return;
     if (!ts || ts === lastTsRef.current) return;
 
