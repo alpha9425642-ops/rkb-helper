@@ -354,20 +354,27 @@ export default function App() {
             )}
           </div>
 
-          <ToastEdgeFlash flashKey={flashKey} myKey="totp">
-            <div className="pill" onClick={copyTotp} style={{ height: "100%", display: "grid", placeItems: "center" }}>
-              {totpToken ? (
-                <div style={{ textAlign: "center" }}>
-                  <div className="bigValue" style={{ fontSize: 28 }}>{totpToken}</div>
-                  <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                    Refresh in <span className="kbd">{totpLeft}s</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="muted">Paste or type a secret to see OTP</div>
-              )}
-            </div>
-          </ToastEdgeFlash>
+<ToastEdgeFlash flashKey={flashKey} myKey="totp">
+  <div
+    className="pill"
+    onClick={copyTotp}
+    style={{ height: "100%", display: "grid", placeItems: "center" }}
+  >
+    {secret && !totpToken ? (
+      <div className="muted">Invalid secret (needs Base32 or otpauth://)</div>
+    ) : totpToken ? (
+      <div style={{ textAlign: "center" }}>
+        <div className="bigValue" style={{ fontSize: 28 }}>{totpToken}</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+          Refresh in <span className="kbd">{totpLeft}s</span>
+        </div>
+      </div>
+    ) : (
+      <div className="muted">Paste or type a secret to see OTP</div>
+    )}
+  </div>
+</ToastEdgeFlash>
+
         </div>
       </div>
     </div>
