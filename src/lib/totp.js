@@ -47,16 +47,26 @@ function parseOtpAuth(input) {
 }
 
 async function hmac(algorithm, keyBytes, msgBytes) {
+  const algoMap = {
+    SHA1: "SHA-1",
+    SHA256: "SHA-256",
+    SHA512: "SHA-512",
+  };
+
+  const hashName = algoMap[algorithm] || "SHA-1";
+
   const key = await crypto.subtle.importKey(
     "raw",
     keyBytes,
-    { name: "HMAC", hash: { name: algorithm } },
+    { name: "HMAC", hash: { name: hashName } },
     false,
     ["sign"]
   );
+
   const sig = await crypto.subtle.sign("HMAC", key, msgBytes);
   return new Uint8Array(sig);
 }
+
 
 function intToBytes(counter) {
   const b = new Uint8Array(8);
