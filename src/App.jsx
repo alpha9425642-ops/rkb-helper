@@ -175,7 +175,9 @@ export default function App() {
   const totpRef = useRef(null);
 useEffect(() => {
   try {
-    const t = makeTotp(secret);
+const t = makeTotp(secret);
+
+
     totpRef.current = t;
 
     if (!t) {
