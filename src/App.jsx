@@ -88,9 +88,11 @@ export default function App() {
     setName(makeName(gender));
   }
 
-  async function copyName() {
-    await copyWithFlash(name, "name", setFlashKey);
-  }
+async function copyName(e) {
+  e?.stopPropagation?.();
+  await copyWithFlash(name, "name", setFlashKey);
+}
+
 
   // TEMPMAIL+ helpers
   async function tmPlusNew() {
@@ -162,15 +164,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mailTab]);
 
-  async function copyEmail() {
-    if (!email) return;
-    await copyWithFlash(email, "email", setFlashKey);
-  }
+async function copyEmail(e) {
+  e?.stopPropagation?.();
+  if (!email) return;
+  await copyWithFlash(email, "email", setFlashKey);
+}
 
-  async function copyOtpFromMail() {
-    if (!otpFromMail) return;
-    await copyWithFlash(otpFromMail, "mailOtp", setFlashKey);
-  }
+
+async function copyOtpFromMail(e) {
+  e?.stopPropagation?.();
+  if (!otpFromMail) return;
+  await copyWithFlash(otpFromMail, "mailOtp", setFlashKey);
+}
+
 
 // 2FA loop
 const totpRef = useRef(null);
@@ -219,10 +225,12 @@ useEffect(() => {
     setSecret("");
   }
 
-  async function copyTotp() {
-    if (!totpToken) return;
-    await copyWithFlash(totpToken, "totp", setFlashKey);
-  }
+async function copyTotp(e) {
+  e?.stopPropagation?.();
+  if (!totpToken) return;
+  await copyWithFlash(totpToken, "totp", setFlashKey);
+}
+
 
   // Gender icon cycles: mix -> male -> female -> mix
   function cycleGender() {
