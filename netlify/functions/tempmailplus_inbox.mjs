@@ -1,124 +1,108 @@
-import * as mod from "temp-mail-plus-api";
-
-function resolveCtor() {
-  // Handles: default export, named export, or nested default
-  const d = mod?.default;
-  return (
-    d?.default || // sometimes transpiled modules nest default
-    d ||          // normal default export
-    mod?.TempMail || // named export
-    mod            // fallback (rare)
-  );
-}
-
-function makeClient(email) {
-  const Ctor = resolveCtor();
-
-  // try as constructor
-  try {
-    return new Ctor(email);
-  } catch {}
-
-  // try as function returning an object
-  try {
-    return Ctor(email);
-  } catch {}
-
-  // try nested TempMail
-  try {
-    if (Ctor?.TempMail) return new Ctor.TempMail(email);
-  } catch {}
-
-  return null;
-}
-
-function pickFn(obj, names) {
-  for (const n of names) {
-    if (obj && typeof obj[n] === "function") return obj[n].bind(obj);
-  }
-  return null;
-}
+// netlify/functions/tempmailplus_inbox.mjs
 
 export const handler = async (event) => {
   try {
-    const email = (event.queryStringParameters?.email || "").trim();
-    if (!email) {
-      return {
-        statusCode: 400,
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ok: false, error: "Missing email" }),
-      };
+    const qs = event.queryStringParameters || {};
+    const email = (qs.email || "").trim(); // MUST include @domain
+    const epin = (qs.epin || "").trim();   // usually blank
+    const limit = Number(qs.limit || 20);
+
+    if (!email || !email.includes("@")) {
+      return json(400, { error: "Missing or invalid email (must include @domain)" });
     }
 
-    const client = makeClient(email);
-    if (!client) {
-      return {
-        statusCode: 500,
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ok: false,
-          error:
-            "TempMail client could not be created (library export mismatch).",
-          debug: {
-            moduleKeys: Object.keys(mod || {}),
-            defaultKeys: Object.keys(mod?.default || {}),
-          },
-        }),
-      };
+    // 1) List mails
+    const listUrl =
+      `https://tempmail.plus/api/mails?email=${encodeURIComponent(email)}` +
+      `&limit=${encodeURIComponent(String(limit))}` +
+      `&epin=${encodeURIComponent(epin)}`;
+
+    const listRes = await fetch(listUrl, {
+      headers: {
+        "accept": "application/json, text/plain, */*",
+        "user-agent": "Mozilla/5.0",
+      },
+    });
+
+    if (!listRes.ok) {
+      const t = await safeText(listRes);
+      return json(502, { error: "TempMail+ list failed", status: listRes.status, details: t });
     }
 
-    // Find inbox/list method across versions
-    const listInbox =
-      pickFn(client, [
-        "getInbox",
-        "inbox",
-        "getMails",
-        "mails",
-        "getMessages",
-        "messages",
-        "getMailList",
-      ]) ||
-      pickFn(mod, ["getInbox", "getMails", "getMessages"]) ||
-      pickFn(mod?.default, ["getInbox", "getMails", "getMessages"]);
+    const listData = await listRes.json();
 
-    if (!listInbox) {
-      return {
-        statusCode: 500,
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ok: false,
-          error: "No inbox method found on temp-mail-plus-api client.",
-          debug: { clientKeys: Object.keys(client || {}) },
-        }),
-      };
+    // Expected shape (commonly):
+    // { result: true, mail_list: [ { mail_id, from_mail, from_name, subject, time, ... } ], ... }
+    const ok = listData?.result === true;
+    const mailList = Array.isArray(listData?.mail_list) ? listData.mail_list : [];
+
+    if (!ok) {
+      return json(200, { items: [] });
     }
 
-    const raw = await listInbox();
-    const mails = Array.isArray(raw) ? raw : raw?.mails || raw?.messages || [];
+    // 2) Fetch message bodies (only newest few to keep it fast)
+    const newest = mailList.slice(0, 10);
 
-    // Normalize shape for your frontend
-    const normalized = mails.map((m) => ({
-      id: m?.id ?? m?.mail_id ?? m?._id ?? m?.messageId ?? m?.uuid ?? "",
-      from: m?.from ?? m?.sender ?? "",
-      subject: m?.subject ?? m?.title ?? "",
-      date: m?.date ?? m?.time ?? m?.created_at ?? "",
-      text: m?.text ?? m?.body_text ?? m?.body ?? "",
-      html: m?.html ?? m?.body_html ?? "",
-    }));
+    const items = await Promise.all(
+      newest.map(async (m) => {
+        const mailId = m?.mail_id ?? m?.id;
+        const from = m?.from_mail || m?.from || "";
+        const subject = m?.subject || "";
+        const time = m?.time || "";
 
-    return {
-      statusCode: 200,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ok: true, mails: normalized }),
-    };
-  } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        ok: false,
-        error: String(e?.message || e),
-      }),
-    };
+        let text = "";
+        if (mailId != null) {
+          const msgUrl =
+            `https://tempmail.plus/api/mails/${encodeURIComponent(String(mailId))}` +
+            `?email=${encodeURIComponent(email)}` +
+            `&epin=${encodeURIComponent(epin)}`;
+
+          const msgRes = await fetch(msgUrl, {
+            headers: {
+              "accept": "application/json, text/plain, */*",
+              "user-agent": "Mozilla/5.0",
+            },
+          });
+
+          if (msgRes.ok) {
+            const msgData = await msgRes.json();
+            // Common fields: text, subject, from_mail, time, html (varies)
+            text = (msgData?.text || msgData?.body || msgData?.mail_text || "").toString();
+          }
+        }
+
+        return {
+          id: String(mailId ?? ""),
+          from,
+          subject,
+          text,
+          time,
+        };
+      })
+    );
+
+    return json(200, { items });
+  } catch (err) {
+    return json(500, { error: "Server error", message: String(err?.message || err) });
   }
 };
+
+function json(statusCode, obj) {
+  return {
+    statusCode,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "*",
+    },
+    body: JSON.stringify(obj),
+  };
+}
+
+async function safeText(res) {
+  try {
+    return await res.text();
+  } catch {
+    return "";
+  }
+}

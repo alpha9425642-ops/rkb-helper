@@ -1,37 +1,26 @@
-import * as mod from "temp-mail-plus-api";
-
-function domainsFromModule() {
-  return (
-    mod?.TEMP_MAIL_DOMAINS ||
-    mod?.default?.TEMP_MAIL_DOMAINS ||
-    mod?.default?.default?.TEMP_MAIL_DOMAINS ||
-    []
-  );
-}
-
-function rand(n = 10) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let s = "";
-  for (let i = 0; i < n; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
-}
+// netlify/functions/tempmailplus_new.mjs
 
 export const handler = async () => {
-  try {
-    const domains = domainsFromModule();
-    const domain = domains.length ? domains[Math.floor(Math.random() * domains.length)] : "rover.info";
-    const email = `rkb${Date.now()}${rand(4)}@${domain}`;
+  // TempMail+ supports many domains; these are common ones people use.
+  const domains = [
+    "rover.info",
+    "mailto.in.ua",
+    "mailbox.in.ua",
+    "fextemp.com",
+  ];
 
-    return {
-      statusCode: 200,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ok: true, email, domain }),
-    };
-  } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ok: false, error: String(e?.message || e) }),
-    };
-  }
+  const domain = domains[Math.floor(Math.random() * domains.length)];
+
+  // random user
+  const rand = Math.random().toString(36).slice(2, 10);
+  const email = `rkb${Date.now().toString().slice(-6)}${rand}@${domain}`;
+
+  return {
+    statusCode: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "access-control-allow-origin": "*",
+    },
+    body: JSON.stringify({ email }),
+  };
 };
