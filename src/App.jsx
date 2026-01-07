@@ -259,7 +259,7 @@ async function copyTotp(e) {
 <div
   style={{
     display: "grid",
-    gridTemplateRows: "auto 1fr minmax(200px, auto)",
+    gridTemplateRows: "auto 1fr minmax(220px, auto)",
     gap: 10,
     minHeight: 0,
   }}
