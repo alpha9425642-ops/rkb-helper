@@ -5,7 +5,7 @@ export const handler = async (event) => {
     const email = event.queryStringParameters?.email;
     if (!email) return { statusCode: 400, body: JSON.stringify({ error: "email required" }) };
 
-    const tm = new TempMail(email);
+    const tm = TempMail(email);
     const inbox = await tm.fetchInbox(); // wrapper does the fetching
 
     // Normalize
