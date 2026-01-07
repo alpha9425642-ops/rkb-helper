@@ -328,37 +328,28 @@ async function copyTotp(e) {
             </div>
           </div>
 
-{/* Buttons + OTP (keep together so buttons don't vanish on small screens) */}
-<div style={{ display: "grid", gap: 8 }}>
-  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-    <div className="btn" onClick={mailDelete}>
-      <Icon kind="trash" />
-      <span>Delete</span>
-    </div>
+          {/* Buttons + OTP */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className="btn" onClick={mailDelete}>
+              <Icon kind="trash" />
+              <span>Delete</span>
+            </div>
 
-    <div className="btn" onClick={mailRefresh}>
-      <div className={spinMail ? "spin360" : ""}>
-        <Icon kind="refresh" />
-      </div>
-      <span>Refresh</span>
-    </div>
-  </div>
+            <div className="btn" onClick={mailRefresh}>
+              <div className={spinMail ? "spin360" : ""}><Icon kind="refresh" /></div>
+              <span>Refresh</span>
+            </div>
+          </div>
 
-  {otpFromMail ? (
-    <ToastEdgeFlash flashKey={flashKey} myKey="mailOtp">
-      <div
-        className="pill"
-        onClick={copyOtpFromMail}
-        style={{ textAlign: "center" }}
-      >
-        <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>
-          OTP
+          {otpFromMail ? (
+            <ToastEdgeFlash flashKey={flashKey} myKey="mailOtp">
+              <div className="pill" onClick={copyOtpFromMail} style={{ marginTop: 8, textAlign: "center" }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>OTP</div>
+                <div className="bigValue">{otpFromMail}</div>
+              </div>
+            </ToastEdgeFlash>
+          ) : null}
         </div>
-        <div className="bigValue">{otpFromMail}</div>
-      </div>
-    </ToastEdgeFlash>
-  ) : null}
-</div>
 
         {/* 3) 2FA */}
         <div className="card" style={{ padding: 12, display: "grid", gridTemplateRows: "auto auto 1fr", gap: 10, minHeight: 0 }}>
