@@ -365,12 +365,14 @@ async function copyTotp(e) {
   style={{
     padding: 12,
     display: "grid",
-    gridTemplateRows: "auto auto auto",
+    gridTemplateRows: "auto auto auto", // ✅ no 1fr
     gap: 10,
     minHeight: 0,
-    alignContent: "start",
+    alignContent: "start",              // ✅ pack to top
+    overflow: "hidden",                 // ✅ prevents weird stretching
   }}
 >
+
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontWeight: 900 }}>2FA</div>
