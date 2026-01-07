@@ -88,11 +88,9 @@ export default function App() {
     setName(makeName(gender));
   }
 
-async function copyName(e) {
-  e?.stopPropagation?.();
-  await copyWithFlash(name, "name", setFlashKey);
-}
-
+  async function copyName() {
+    await copyWithFlash(name, "name", setFlashKey);
+  }
 
   // TEMPMAIL+ helpers
   async function tmPlusNew() {
@@ -164,19 +162,15 @@ async function copyName(e) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mailTab]);
 
-async function copyEmail(e) {
-  e?.stopPropagation?.();
-  if (!email) return;
-  await copyWithFlash(email, "email", setFlashKey);
-}
+  async function copyEmail() {
+    if (!email) return;
+    await copyWithFlash(email, "email", setFlashKey);
+  }
 
-
-async function copyOtpFromMail(e) {
-  e?.stopPropagation?.();
-  if (!otpFromMail) return;
-  await copyWithFlash(otpFromMail, "mailOtp", setFlashKey);
-}
-
+  async function copyOtpFromMail() {
+    if (!otpFromMail) return;
+    await copyWithFlash(otpFromMail, "mailOtp", setFlashKey);
+  }
 
 // 2FA loop
 const totpRef = useRef(null);
@@ -225,12 +219,10 @@ useEffect(() => {
     setSecret("");
   }
 
-async function copyTotp(e) {
-  e?.stopPropagation?.();
-  if (!totpToken) return;
-  await copyWithFlash(totpToken, "totp", setFlashKey);
-}
-
+  async function copyTotp() {
+    if (!totpToken) return;
+    await copyWithFlash(totpToken, "totp", setFlashKey);
+  }
 
   // Gender icon cycles: mix -> male -> female -> mix
   function cycleGender() {
@@ -301,57 +293,67 @@ async function copyTotp(e) {
             onChange={setMailTab}
           />
 
-          <div style={{ display: "grid", gridTemplateRows: "auto auto", gap: 8, minHeight: 0 }}>
+          <div style={{ display: "grid", gridTemplateRows: "auto 1fr auto", gap: 8, minHeight: 0 }}>
+            {/* Email (tap to copy) */}
             <ToastEdgeFlash flashKey={flashKey} myKey="email">
-              <div className="pill" onClick={copyEmail} style={{ padding: 12, minHeight: 46, display: "flex", alignItems: "center" }}>
+              <div
+                className="pill"
+                onClick={copyEmail}
+                style={{
+                  padding: 12,
+                  minHeight: 46,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 <div className="bigValue" style={{ fontSize: 16, wordBreak: "break-all" }}>
                   {email || (mailTab === "mailcx" ? "Mail.cx (adapter needed)" : "Creating…")}
                 </div>
               </div>
             </ToastEdgeFlash>
 
-            {/* Inbox preview */}
-            <div className="pill" style={{ minHeight: 56, overflow: "hidden" }}>
-              {mailStatus ? (
-                <div className="muted" style={{ fontSize: 13 }}>{mailStatus}</div>
-              ) : emails.length ? (
-                <div style={{ display: "grid", gap: 6 }}>
-                  {emails.slice(0, 2).map((m, idx) => (
-                    <div key={idx} className="muted" style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {m.from ? `${m.from} — ` : ""}{m.subject || "(no subject)"}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="muted" style={{ fontSize: 13 }}>Inbox empty</div>
-              )}
-            </div>
-          </div>
-
-          {/* Buttons + OTP */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div className="btn" onClick={mailDelete}>
-              <Icon kind="trash" />
-              <span>Delete</span>
-            </div>
-
-            <div className="btn" onClick={mailRefresh}>
-              <div className={spinMail ? "spin360" : ""}><Icon kind="refresh" /></div>
-              <span>Refresh</span>
-            </div>
-          </div>
-
-          {otpFromMail ? (
+            {/* Inbox / OTP (tap to copy OTP when available) */}
             <ToastEdgeFlash flashKey={flashKey} myKey="mailOtp">
-              <div className="pill" onClick={copyOtpFromMail} style={{ marginTop: 8, textAlign: "center" }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>OTP</div>
-                <div className="bigValue">{otpFromMail}</div>
+              <div
+                className="pill"
+                onClick={copyMailOtp}
+                style={{
+                  minHeight: 120,
+                  padding: 12,
+                  overflow: "hidden",
+                  display: "grid",
+                  placeItems: "center",
+                  textAlign: "center",
+                }}
+              >
+                {mailStatus ? (
+                  <div className="muted" style={{ fontSize: 13 }}>{mailStatus}</div>
+                ) : otpFromMail ? (
+                  <div style={{ width: "100%" }}>
+                    <div className="muted" style={{ fontSize: 12, marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {mailFrom ? `${mailFrom} — ${mailSubject || ""}` : mailSubject || "OTP"}
+                    </div>
+                    <div className="muted" style={{ fontSize: 11, letterSpacing: 1, marginBottom: 2 }}>OTP</div>
+                    <div className="bigValue" style={{ fontSize: 30 }}>{otpFromMail}</div>
+                  </div>
+                ) : (
+                  <div className="muted">Inbox empty</div>
+                )}
               </div>
             </ToastEdgeFlash>
-          ) : null}
-        </div>
 
-        {/* 3) 2FA */}
+            {/* Buttons */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <button className="btn danger" onClick={deleteMail} type="button">
+                🗑️ Delete
+              </button>
+              <button className="btn" onClick={refreshMail} type="button">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* 3) 2FA */}
         <div className="card" style={{ padding: 12, display: "grid", gridTemplateRows: "auto auto 1fr", gap: 10, minHeight: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontWeight: 900 }}>2FA</div>
