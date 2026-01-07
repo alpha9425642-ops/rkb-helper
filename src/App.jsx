@@ -256,9 +256,9 @@ async function copyTotp(e) {
       </div>
 
       {/* Body: 3 sections */}
-      <div style={{ display: "grid", gridTemplateRows: "1fr 1fr 1fr", gap: 10, minHeight: 0 }}>
+<div style={{ display: "grid", gridTemplateRows: "auto 1fr auto", gap: 10, minHeight: 0 }}>
         {/* 1) Random name */}
-        <div className="card" style={{ padding: 12, display: "grid", gridTemplateRows: "auto 1fr", gap: 10, minHeight: 0 }}>
+<div className="card" style={{ padding: 12, display: "grid", gridTemplateRows: "auto auto auto", gap: 10, minHeight: 0, alignContent: "start" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontWeight: 900 }}>Random Name</div>
             <div className="muted" style={{ fontSize: 12 }}>Tap value to copy</div>
